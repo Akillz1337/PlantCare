@@ -1,4 +1,4 @@
-def analyze_plant_health(data):
+def analyze_plant_health(data, weather=None):
     recommendations = []
     warnings = []
 
@@ -25,6 +25,12 @@ def analyze_plant_health(data):
     npk = data['npk']
     if npk['nitrogen'] < 50:
         recommendations.append("Consider nitrogen fertilizer")
+
+    if weather:
+        if weather['temperature'] < 5:
+            warnings.append("It's cold outside - keep plant away from windows")
+        if weather['humidity'] < 30:
+            recommendations.append("Low outdoor humidity - monitor soil moisture closely")
 
     return {
         'recommendations': recommendations,
