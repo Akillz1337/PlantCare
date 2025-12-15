@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Plant Care System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2d5016;
+            margin-bottom: 10px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .warning {
+            background-color: #ffebee;
+            border-left: 4px solid #f44336;
+        }
+        .recommendation {
+            background-color: #e8f5e9;
+            border-left: 4px solid #4caf50;
+        }
+        .contextual {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+        .sensor-data {
+            background-color: #f5f5f5;
+        }
+        .plant-selector {
+            margin-bottom: 20px;
+        }
+        .plant-selector select {
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #4caf50;
+            border-radius: 5px;
+            background-color: white;
+            cursor: pointer;
+        }
+        .plant-selector label {
+            font-weight: bold;
+            margin-right: 10px;
+            color: #2d5016;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-healthy {
+            background-color: #4caf50;
+            color: white;
+        }
+        .status-attention {
+            background-color: #ff9800;
+            color: white;
+        }
+        .status-needs-attention {
+            background-color: #f44336;
+            color: white;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Indoor Plant Care System</h1>
+    
+    {% if use_mock_data %}
+    <div class="section" style="background-color: #fff3cd; border-left: 4px solid #ffc107;">
+        <p><strong>Notice:</strong> Unable to connect to sensor API. Currently displaying mock data or historical data. Please check network connection or sensor status.</p>
+    </div>
+    {% endif %}
+    
+    <div class="section plant-selector">
+        <label for="plantSelect">Select Plant Type:</label>
+        <select id="plantSelect" onchange="changePlant()">
+            {% for key, name in available_plants.items() %}
+            <option value="{{ key }}" {% if key == plant_type %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <div class="section sensor-data">
+        <h2>Current Sensor Data</h2>
+        <p><strong>Soil Moisture:</strong> {{ data.soil_moisture }}%</p>
+        <p><strong>Soil Temperature:</strong> {{ data.soil_temp }}°C</p>
+        <p><strong>Soil pH:</strong> {{ data.soil_ph }}</p>
+        <p><strong>Light Hours:</strong> {{ data.light_hours }} hours</p>
+        <p><strong>NPK:</strong> N:{{ data.npk.nitrogen }} P:{{ data.npk.phosphorus }} K:{{ data.npk.potassium }}</p>
+    </div>
+
+    {% if weather %}
+    <div class="section sensor-data">
+        <h2>Current Weather (Lahti)</h2>
+        <p><strong>Temperature:</strong> {{ weather.temperature }}°C</p>
+        <p><strong>Humidity:</strong> {{ weather.humidity }}%</p>
+    </div>
+    {% endif %}
+
+    <div class="section">
+        <h2>Plant Status:
+            <span class="status-badge 
+                {% if result.status == 'healthy' %}status-healthy
+                {% elif result.status == 'healthy but could improve' %}status-attention
+                {% else %}status-needs-attention{% endif %}">
+                {% if result.status == 'healthy' %}Healthy
+                {% elif result.status == 'healthy but could improve' %}Good but Could Improve
+                {% else %}Needs Attention{% endif %}
+            </span>
+        </h2>
+        <p><strong>Current Plant:</strong> {{ result.plant_name }}</p>
+    </div>
+
+    {% if result.contextual_insights %}
+    <div class="section contextual">
+        <h3>Contextual Analysis Insights</h3>
+        <ul>
+        {% for insight in result.contextual_insights %}
+            <li>{{ insight }}</li>
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if trends %}
+    <div class="section" style="background-color: #fff3e0; border-left: 4px solid #ff9800;">
+        <h3>Trend Analysis</h3>
+        <ul>
+        {% for trend in trends %}
+            <li>{{ trend }}</li>
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if result.warnings %}
+    <div class="section warning">
+        <h3>Warnings</h3>
+        <ul>
+        {% for warning in result.warnings %}
+            <li>{{ warning }}</li>
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if result.recommendations %}
+    <div class="section recommendation">
+        <h3>Recommendations</h3>
+        <ul>
+        {% for rec in result.recommendations %}
+            <li>{{ rec }}</li>
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <script>
+        function changePlant() {
+            const select = document.getElementById('plantSelect');
+            const plantType = select.value;
+            
+            fetch('/api/plant/select', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ plant_type: plantType })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to change plant type');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred, please try again');
+            });
+        }
+    </script>
+</body>
+</html>
